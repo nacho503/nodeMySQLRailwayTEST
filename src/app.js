@@ -20,6 +20,6 @@ app.get('/create', async(req,res)=>{
   res.json(result)
 })
 
-app.listen(PORT);
+app.listen(PORT , "0.0.0.0");
 
 //logging, morgan, winston

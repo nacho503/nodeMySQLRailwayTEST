@@ -21,6 +21,5 @@ app.get('/create', async(req,res)=>{
 })
 
 app.listen(PORT);
-console.log('Server on port', PORT);
 
 //logging, morgan, winston

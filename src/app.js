@@ -10,22 +10,22 @@ app.use(express.json());
 
 
 app.post('/create-user', async (req, res) => {
-  const { name, password } = req.body;
+  const { username, password } = req.body;
 
-  if (!name || !password) {
+  if (!username || !password) {
     return res.status(400).json({ error: 'Must provide user and password' });
   }
 
   try {
     //Check if user already exists
-    const [existingUsers] = await pool.query('SELECT * FROM users WHERE name = ?', [name]);
+    const [existingUsers] = await pool.query('SELECT * FROM users WHERE name = ?', [username]);
 
     if (existingUsers.length > 0) {
       return res.status(400).json({ error: 'User name already exists' });
     }
 
     //Inserts new user in db
-    const result = await pool.query('INSERT INTO users (name, password) VALUES (?, ?)', [name, password]);
+    const result = await pool.query('INSERT INTO users (name, password) VALUES (?, ?)', [username, password]);
 
     return res.json({ message: 'User created succesfully', userId: result[0].insertId });
   } catch (error) {
@@ -36,10 +36,10 @@ app.post('/create-user', async (req, res) => {
 
 
 app.post('/login', async (req, res) => {
-  const { name, password } = req.body;
+  const { username, password } = req.body;
 
   // Check credentials
-  const [user] = await pool.query('SELECT * FROM users WHERE name = ? AND password = ?', [name, password]);
+  const [user] = await pool.query('SELECT * FROM users WHERE name = ? AND password = ?', [username, password]);
 
   if (user.length === 1) {
     // Usuario autenticado
@@ -61,10 +61,6 @@ app.get('/ping', async (req,res)=>{
   res.json(result[0])
 })
 
-app.get('/create', async(req,res)=>{
-  const result = await pool.query('INSERT INTO users(name) VALUES ("John")')
-  res.json(result)
-})
 
 app.listen(PORT , "0.0.0.0");
 

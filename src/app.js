@@ -1,8 +1,54 @@
 import express from 'express';
 import {pool} from './db.js';
-import { PORT } from './config.js';
+import { PORT,SECRET_KEY } from './config.js';
+import jwt from 'jsonwebtoken';
 
 const app = express();
+
+app.use(express.json());
+
+
+
+app.post('/create-user', async (req, res) => {
+  const { name, password } = req.body;
+
+  if (!name || !password) {
+    return res.status(400).json({ error: 'Must provide user and password' });
+  }
+
+  try {
+    //Check if user already exists
+    const [existingUsers] = await pool.query('SELECT * FROM users WHERE name = ?', [name]);
+
+    if (existingUsers.length > 0) {
+      return res.status(400).json({ error: 'User name already exists' });
+    }
+
+    //Inserts new user in db
+    const result = await pool.query('INSERT INTO users (name, password) VALUES (?, ?)', [name, password]);
+
+    return res.json({ message: 'User created succesfully', userId: result[0].insertId });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'There has been an error creating user' });
+  }
+});
+
+
+app.post('/login', async (req, res) => {
+  const { name, password } = req.body;
+
+  // Check credentials
+  const [user] = await pool.query('SELECT * FROM users WHERE name = ? AND password = ?', [name, password]);
+
+  if (user.length === 1) {
+    // Usuario autenticado
+    const token = jwt.sign({ user: user[0].id }, SECRET_KEY, { expiresIn: '1h' }); // Genera un token JWT con una duración de 1 hora
+    res.json({ token });
+  } else {
+    res.status(401).json({ error: 'Credenciales incorrectas' });
+  }
+});
 
 app.get('/',async (req,res)=>{
   const [rows] = await pool.query('SELECT * FROM users');

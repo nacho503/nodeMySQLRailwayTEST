@@ -39,7 +39,7 @@ app.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   // Check credentials
-  const [user] = await pool.query('SELECT * FROM users WHERE name = ? AND password = ?', [username, password]);
+  const [user] = await pool.query('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
 
   if (user.length === 1) {
     // Usuario autenticado

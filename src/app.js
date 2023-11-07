@@ -62,6 +62,59 @@ app.get('/ping', async (req,res)=>{
 })
 
 
+// Route to create user data
+app.post('/create-userdata', async (req, res) => {
+  const { user_id, user_name, user_occupation } = req.body;
+
+  if (!user_id || !user_name || !user_occupation) {
+    return res.status(400).json({ error: 'Must provide user_id, user_name, and user_occupation' });
+  }
+
+  try {
+    // Inserts new user data into the 'userdata' table
+    const result = await pool.query('INSERT INTO userdata (user_id, user_name, user_occupation) VALUES (?, ?, ?)', [
+      user_id,
+      user_name,
+      user_occupation,
+    ]);
+
+    return res.json({ message: 'User data created successfully', user_data_id: result[0].insertId });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'There has been an error creating user data' });
+  }
+});
+
+// Route to get user data from 'userdata' based on the provided 'username'
+app.post('/combined-data', async (req, res) => {
+  const { username } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ error: 'Please provide a username in the query parameters.' });
+  }
+
+  try {
+    // Perform a SQL JOIN to retrieve data from both tables based on the provided 'username'
+    const query = `
+      SELECT u.username, ud.user_name, ud.user_occupation
+      FROM users AS u
+      JOIN userdata AS ud ON u.id = ud.user_id
+      WHERE u.username = ?
+    `;
+
+    const [rows] = await pool.query(query, [username]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'User data not found for the provided username.' });
+    }
+
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 app.listen(PORT , "0.0.0.0");
 
 //logging, morgan, winston

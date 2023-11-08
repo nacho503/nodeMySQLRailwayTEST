@@ -10,24 +10,27 @@ app.use(express.json());
 
 
 app.post('/create-user', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, nationalid, country, lastname, email } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Must provide user and password' });
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Must provide email and password' });
   }
 
   try {
-    //Check if user already exists
-    const [existingUsers] = await pool.query('SELECT * FROM users WHERE name = ?', [username]);
+    // Check if the username or email already exists
+    const [existingUsers] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
 
     if (existingUsers.length > 0) {
-      return res.status(400).json({ error: 'User name already exists' });
+      return res.status(400).json({ error: 'Email already exists' });
     }
 
-    //Inserts new user in db
-    const result = await pool.query('INSERT INTO users (name, password) VALUES (?, ?)', [username, password]);
+    // Insert a new user into the 'users' table
+    const result = await pool.query(
+      'INSERT INTO users (username, password, nationalid, country, lastname, email) VALUES (?, ?, ?, ?, ?, ?)',
+      [username, password, nationalid, country, lastname, email]
+    );
 
-    return res.json({ message: 'User created succesfully', userId: result[0].insertId });
+    return res.json({ message: 'User created successfully', userId: result[0].insertId });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'There has been an error creating user' });
@@ -36,17 +39,17 @@ app.post('/create-user', async (req, res) => {
 
 
 app.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
   // Check credentials
-  const [user] = await pool.query('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
+  const [user] = await pool.query('SELECT * FROM users WHERE email = ? AND password = ?', [email, password]);
 
   if (user.length === 1) {
-    // Usuario autenticado
-    const token = jwt.sign({ user: user[0].id }, SECRET_KEY, { expiresIn: '1h' }); // Genera un token JWT con una duración de 1 hora
+    // User authenticated
+    const token = jwt.sign({ user: user[0].id }, SECRET_KEY, { expiresIn: '1h' }); // Generate a JWT token with a duration of 1 hour
     res.json({ token });
   } else {
-    res.status(401).json({ error: 'Credenciales incorrectas' });
+    res.status(401).json({ error: 'Incorrect credentials' });
   }
 });
 
@@ -55,65 +58,7 @@ app.get('/',async (req,res)=>{
   res.json(rows);
 })
 
-app.get('/ping', async (req,res)=>{
-  const [result] =await pool.query(`SELECT "hello world" as RESULT`);
-  console.log(result[0]);
-  res.json(result[0])
-})
 
-
-// Route to create user data
-app.post('/create-userdata', async (req, res) => {
-  const { user_id, user_name, user_occupation } = req.body;
-
-  if (!user_id || !user_name || !user_occupation) {
-    return res.status(400).json({ error: 'Must provide user_id, user_name, and user_occupation' });
-  }
-
-  try {
-    // Inserts new user data into the 'userdata' table
-    const result = await pool.query('INSERT INTO userdata (user_id, user_name, user_occupation) VALUES (?, ?, ?)', [
-      user_id,
-      user_name,
-      user_occupation,
-    ]);
-
-    return res.json({ message: 'User data created successfully', user_data_id: result[0].insertId });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: 'There has been an error creating user data' });
-  }
-});
-
-// Route to get user data from 'userdata' based on the provided 'username'
-app.post('/combined-data', async (req, res) => {
-  const { username } = req.body;
-
-  if (!username) {
-    return res.status(400).json({ error: 'Please provide a username in the query parameters.' });
-  }
-
-  try {
-    // Perform a SQL JOIN to retrieve data from both tables based on the provided 'username'
-    const query = `
-      SELECT u.username, ud.user_name, ud.user_occupation
-      FROM users AS u
-      JOIN userdata AS ud ON u.id = ud.user_id
-      WHERE u.username = ?
-    `;
-
-    const [rows] = await pool.query(query, [username]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'User data not found for the provided username.' });
-    }
-
-    res.json(rows);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
 
 app.listen(PORT , "0.0.0.0");
 

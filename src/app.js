@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import {pool} from './db.js';
 import { PORT,SECRET_KEY } from './config.js';
 import jwt from 'jsonwebtoken';
@@ -6,6 +7,7 @@ import jwt from 'jsonwebtoken';
 const app = express();
 
 app.use(express.json());
+app.use(cors());
 
 
 

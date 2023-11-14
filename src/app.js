@@ -49,9 +49,34 @@ app.post('/login', async (req, res) => {
   if (user.length === 1) {
     // User authenticated
     const token = jwt.sign({ user: user[0].id }, SECRET_KEY, { expiresIn: '1h' }); // Generate a JWT token with a duration of 1 hour
-    res.json({ token });
+    res.json({ token,  userData: user[0] });
   } else {
     res.status(401).json({ error: 'Incorrect credentials' });
+  }
+});
+
+app.get('/user-data', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1]; // Get token from Authorization header
+
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized: Missing token' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    const userId = decoded.user;
+
+    // Fetch user data using the user ID
+    const [userData] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
+
+    if (userData.length === 1) {
+      res.json(userData[0]);
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(401).json({ error: 'Unauthorized: Invalid token' });
   }
 });
 

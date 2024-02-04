@@ -8,3 +8,15 @@ CREATE TABLE users (
   email VARCHAR(255) NOT NULL
 ); 
 
+CREATE TABLE events (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  event_name VARCHAR(100) NOT NULL,
+  isRecurrent BOOLEAN NOT NULL,
+  isActive BOOLEAN NOT NULL,
+  isPaid BOOLEAN NOT NULL,
+  peoplenumber INT NOT NULL,
+  description TEXT NOT NULL,
+  lat DOUBLE NOT NULL,
+  lng DOUBLE NOT NULL
+);

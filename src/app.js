@@ -85,7 +85,58 @@ app.get('/',async (req,res)=>{
   res.json(rows);
 })
 
+// PUT route for creating events
+app.put('/create-event', async (req, res) => {
+  const {
+    user_id,
+    event_name,
+    isRecurrent,
+    isActive,
+    isPaid,
+    peoplenumber,
+    description,
+    lat,
+    lng,
+  } = req.body;
 
+  try {
+    const token = req.headers.authorization?.split(' ')[1]; // Get token from Authorization header
+
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized: Missing token' });
+    }
+
+    const decoded = jwt.verify(token, SECRET_KEY);
+    const userId = decoded.user;
+
+    if (user_id !== userId) {
+      return res.status(403).json({ error: 'Unauthorized: Invalid user' });
+    }
+
+    // Insert new event into the 'events' table
+    const result = await pool.query(
+      'INSERT INTO events (user_id, event_name, isRecurrent, isActive, isPaid, peoplenumber, description, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [user_id, event_name, isRecurrent, isActive, isPaid, peoplenumber, description, lat, lng]
+    );
+
+    return res.json({ message: 'Event created successfully', eventId: result[0].insertId });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'There has been an error creating event' });
+  }
+});
+
+// GET route to retrieve events
+app.get('/events', async (req, res) => {
+  try {
+    // Fetch all events without authentication
+    const [events] = await pool.query('SELECT * FROM events');
+    res.json(events);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'There has been an error retrieving events' });
+  }
+});
 
 app.listen(PORT , "0.0.0.0");
 

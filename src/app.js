@@ -3,13 +3,14 @@ import cors from 'cors';
 import {pool} from './db.js';
 import { PORT,SECRET_KEY } from './config.js';
 import jwt from 'jsonwebtoken';
+import getRoutes from './routes/getRoutes.js';
 
 const app = express();
 
 app.use(express.json());
 app.use(cors());
 
-
+app.use('/', getRoutes); // Mount all GET routes directly
 
 app.post('/create-user', async (req, res) => {
   const { username, password, nationalid, country, lastname, email } = req.body;
@@ -55,35 +56,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-app.get('/user-data', async (req, res) => {
-  const token = req.headers.authorization?.split(' ')[1]; // Get token from Authorization header
 
-  if (!token) {
-    return res.status(401).json({ error: 'Unauthorized: Missing token' });
-  }
-
-  try {
-    const decoded = jwt.verify(token, SECRET_KEY);
-    const userId = decoded.user;
-
-    // Fetch user data using the user ID
-    const [userData] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
-
-    if (userData.length === 1) {
-      res.json(userData[0]);
-    } else {
-      res.status(404).json({ error: 'User not found' });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(401).json({ error: 'Unauthorized: Invalid token' });
-  }
-});
-
-app.get('/',async (req,res)=>{
-  const [rows] = await pool.query('SELECT * FROM users');
-  res.json(rows);
-})
 
 // PUT route for creating events
 app.put('/create-event', async (req, res) => {
@@ -126,17 +99,7 @@ app.put('/create-event', async (req, res) => {
   }
 });
 
-// GET route to retrieve events
-app.get('/events', async (req, res) => {
-  try {
-    // Fetch all events without authentication
-    const [events] = await pool.query('SELECT * FROM events');
-    res.json(events);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'There has been an error retrieving events' });
-  }
-});
+
 
 app.listen(PORT , "0.0.0.0");
 

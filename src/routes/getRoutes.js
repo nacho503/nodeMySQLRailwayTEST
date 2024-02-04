@@ -1,7 +1,7 @@
+import {pool} from '../db.js';
 import express from 'express';
 const router = express.Router();
 import jwt from 'jsonwebtoken';
-import {pool} from '../db.js';
 
 //All Get routes are in the following
 router.get('/user-data', async (req, res) => {
